@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GlobeFace Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    background: #0f172a;
+    font-family: Arial, sans-serif;
+    color: white;
+    text-align: center;
+}
+
+header {
+    padding: 14px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+canvas {
+    background: linear-gradient(#38bdf8, #0ea5e9);
+    display: block;
+    margin: 10px auto;
+    border-radius: 14px;
+}
+
+button {
+    padding: 12px 22px;
+    font-size: 16px;
+    border-radius: 30px;
+    border: 2px solid white;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: white;
+    color: #0f172a;
+}
+
+footer {
+    font-size: 13px;
+    margin: 15px;
+    opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+
+<header>🎮 GlobeFace Runner</header>
+
+<canvas id="game" width="360" height="500"></canvas>
+
+<button onclick="jump()">JUMP</button>
+
+<footer>
+© 2026 Advik Digital Studio
+</footer>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 50, y: 400, w: 40, h: 40, vy: 0 };
+let gravity = 0.8;
+let obstacle = { x: 360, y: 420, w: 40, h: 30 };
+let score = 0;
+let gameOver = false;
+
+function drawPlayer() {
+    ctx.fillStyle = "#22c55e";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+}
+
+function drawObstacle() {
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+}
+
+function drawScore() {
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.fillText("Score: " + score, 20, 30);
+}
+
+function update() {
+    if (gameOver) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    player.vy += gravity;
+    player.y += player.vy;
+
+    if (player.y > 400) {
+        player.y = 400;
+        player.vy = 0;
+    }
+
+    obstacle.x -= 5;
+    if (obstacle.x < -40) {
+        obstacle.x = 360;
+        score++;
+    }
+
+    // Collision
+    if (
+        player.x < obstacle.x + obstacle.w &&
+        player.x + player.w > obstacle.x &&
+        player.y < obstacle.y + obstacle.h &&
+        player.y + player.h > obstacle.y
+    ) {
+        gameOver = true;
+        alert("Game Over! Score: " + score);
+        location.reload();
+    }
+
+    drawPlayer();
+    drawObstacle();
+    drawScore();
+
+    requestAnimationFrame(update);
+}
+
+function jump() {
+    if (player.y >= 400) {
+        player.vy = -14;
+    }
+}
+
+// Keyboard + Touch
+document.addEventListener("keydown", e => {
+    if (e.code === "Space") jump();
+});
+canvas.addEventListener("touchstart", jump);
+
+update();
+</script>
+
+</body>
+</html>
