@@ -2,50 +2,51 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GlobeFace Game</title>
+<title>GlobeFace Emoji Runner</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
     margin: 0;
-    background: #0f172a;
-    font-family: Arial, sans-serif;
+    background: #020617;
+    font-family: system-ui, Arial;
     color: white;
     text-align: center;
 }
 
 header {
-    padding: 14px;
+    padding: 12px;
     font-size: 22px;
     font-weight: bold;
 }
 
 canvas {
-    background: linear-gradient(#38bdf8, #0ea5e9);
+    background: linear-gradient(#60a5fa, #93c5fd);
     display: block;
-    margin: 10px auto;
-    border-radius: 14px;
+    margin: auto;
+    border-radius: 16px;
+    touch-action: manipulation; /* INSTANT TOUCH */
 }
 
 button {
-    padding: 12px 22px;
-    font-size: 16px;
-    border-radius: 30px;
+    margin-top: 10px;
+    padding: 14px 28px;
+    font-size: 18px;
+    border-radius: 40px;
     border: 2px solid white;
     background: transparent;
     color: white;
     cursor: pointer;
-    transition: 0.3s;
+    transition: transform 0.1s ease;
 }
 
-button:hover {
-    background: white;
-    color: #0f172a;
+button:active {
+    transform: scale(0.9);
 }
 
 footer {
     font-size: 13px;
-    margin: 15px;
+    margin: 10px;
     opacity: 0.8;
 }
 </style>
@@ -53,60 +54,129 @@ footer {
 
 <body>
 
-<header>🎮 GlobeFace Runner</header>
+<header>😃 GlobeFace Emoji Runner</header>
 
-<canvas id="game" width="360" height="500"></canvas>
+<canvas id="game" width="360" height="520"></canvas>
 
-<button onclick="jump()">JUMP</button>
+<button id="jumpBtn">⬆️ JUMP</button>
 
-<footer>
-© 2026 Advik Digital Studio
-</footer>
+<footer>© 2026 Advik Digital Studio</footer>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let player = { x: 50, y: 400, w: 40, h: 40, vy: 0 };
-let gravity = 0.8;
-let obstacle = { x: 360, y: 420, w: 40, h: 30 };
+// HIGH PERFORMANCE SETTINGS
+ctx.font = "36px Arial";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+
+let player = { x: 70, y: 420, vy: 0 };
+let groundY = 460;
+let gravity = 0.9;
+let jumpPower = -16;
+
+let obstacle = { x: 360, y: 420 };
+let coin = { x: 540, y: 380 };
+
 let score = 0;
 let gameOver = false;
 
 function drawPlayer() {
-    ctx.fillStyle = "#22c55e";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.fillText("😃", player.x, player.y);
 }
 
 function drawObstacle() {
-    ctx.fillStyle = "#ef4444";
-    ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+    ctx.fillText("💣", obstacle.x, obstacle.y);
+}
+
+function drawCoin() {
+    ctx.fillText("⭐", coin.x, coin.y);
+}
+
+function drawGround() {
+    ctx.font = "26px Arial";
+    for (let x = 0; x < canvas.width; x += 40) {
+        ctx.fillText("🌱", x, groundY + 20);
+    }
+    ctx.font = "36px Arial";
 }
 
 function drawScore() {
-    ctx.fillStyle = "white";
+    ctx.fillStyle = "black";
     ctx.font = "18px Arial";
-    ctx.fillText("Score: " + score, 20, 30);
+    ctx.fillText("Score: " + score, 60, 30);
+    ctx.font = "36px Arial";
 }
+
+function jump() {
+    if (player.y >= 420) {
+        player.vy = jumpPower; // INSTANT
+    }
+}
+
+// NO LAG INPUT
+document.getElementById("jumpBtn").addEventListener("pointerdown", jump);
+canvas.addEventListener("pointerdown", jump);
+document.addEventListener("keydown", e => {
+    if (e.code === "Space") jump();
+});
 
 function update() {
     if (gameOver) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // PLAYER
     player.vy += gravity;
     player.y += player.vy;
-
-    if (player.y > 400) {
-        player.y = 400;
+    if (player.y > 420) {
+        player.y = 420;
         player.vy = 0;
     }
 
-    obstacle.x -= 5;
+    // OBSTACLE
+    obstacle.x -= 6;
     if (obstacle.x < -40) {
-        obstacle.x = 360;
+        obstacle.x = canvas.width + Math.random() * 200;
         score++;
     }
+
+    // COIN
+    coin.x -= 6;
+    if (coin.x < -40) {
+        coin.x = canvas.width + Math.random() * 300;
+    }
+
+    // COLLISION (BOMB)
+    if (Math.abs(player.x - obstacle.x) < 26 &&
+        Math.abs(player.y - obstacle.y) < 26) {
+        gameOver = true;
+        alert("💥 Game Over!\nScore: " + score);
+        location.reload();
+    }
+
+    // COIN COLLECT
+    if (Math.abs(player.x - coin.x) < 26 &&
+        Math.abs(player.y - coin.y) < 26) {
+        score += 5;
+        coin.x = canvas.width + 200;
+    }
+
+    drawGround();
+    drawPlayer();
+    drawObstacle();
+    drawCoin();
+    drawScore();
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>    }
 
     // Collision
     if (
