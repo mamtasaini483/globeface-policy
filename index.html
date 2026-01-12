@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GlobeFace Emoji Runner</title>
+<title>GlobeFace Emoji Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -25,107 +25,133 @@ canvas {
     display: block;
     margin: auto;
     border-radius: 16px;
-    touch-action: manipulation; /* INSTANT TOUCH */
+    touch-action: manipulation;
 }
 
 button {
-    margin-top: 10px;
-    padding: 14px 28px;
+    padding: 14px 26px;
     font-size: 18px;
     border-radius: 40px;
     border: 2px solid white;
     background: transparent;
     color: white;
     cursor: pointer;
-    transition: transform 0.1s ease;
+    margin: 6px;
 }
 
 button:active {
     transform: scale(0.9);
 }
 
-footer {
-    font-size: 13px;
-    margin: 10px;
-    opacity: 0.8;
+#menu {
+    position: fixed;
+    inset: 0;
+    background: rgba(2,6,23,0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#joystick {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 2px solid white;
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+}
+
+#stick {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 35px;
+    left: 35px;
 }
 </style>
 </head>
 
 <body>
 
-<header>😃 GlobeFace Emoji Runner</header>
+<header>😃 GlobeFace Emoji Adventure</header>
 
 <canvas id="game" width="360" height="520"></canvas>
 
-<button id="jumpBtn">⬆️ JUMP</button>
+<div id="joystick">
+    <div id="stick"></div>
+</div>
 
-<footer>© 2026 Advik Digital Studio</footer>
+<div id="menu">
+    <h1>🎮 GlobeFace Game</h1>
+    <button onclick="startGame()">▶ Start Game</button>
+</div>
 
 <script>
+// CANVAS
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
-// HIGH PERFORMANCE SETTINGS
-ctx.font = "36px Arial";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 
-let player = { x: 70, y: 420, vy: 0 };
-let groundY = 460;
+// SOUNDS
+const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-game-jump-coin-216.wav");
+const coinSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1992.wav");
+const overSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.wav");
+
+// GAME STATE
+let player, obstacle, coin;
 let gravity = 0.9;
-let jumpPower = -16;
-
-let obstacle = { x: 360, y: 420 };
-let coin = { x: 540, y: 380 };
-
+let speed = 5;
 let score = 0;
-let gameOver = false;
+let lives = 3;
+let level = 1;
+let running = false;
 
-function drawPlayer() {
-    ctx.fillText("😃", player.x, player.y);
+// START GAME
+function startGame() {
+    document.getElementById("menu").style.display = "none";
+    reset();
+    running = true;
+    update();
 }
 
-function drawObstacle() {
-    ctx.fillText("💣", obstacle.x, obstacle.y);
+function reset() {
+    player = { x: 70, y: 420, vy: 0 };
+    obstacle = { x: 360, y: 420 };
+    coin = { x: 500, y: 380 };
+    score = 0;
+    lives = 3;
+    level = 1;
+    speed = 5;
 }
 
-function drawCoin() {
-    ctx.fillText("⭐", coin.x, coin.y);
-}
-
-function drawGround() {
-    ctx.font = "26px Arial";
-    for (let x = 0; x < canvas.width; x += 40) {
-        ctx.fillText("🌱", x, groundY + 20);
-    }
-    ctx.font = "36px Arial";
-}
-
-function drawScore() {
-    ctx.fillStyle = "black";
-    ctx.font = "18px Arial";
-    ctx.fillText("Score: " + score, 60, 30);
-    ctx.font = "36px Arial";
+// DRAW FUNCTIONS
+function drawText(text, x, y, size = 36) {
+    ctx.font = size + "px Arial";
+    ctx.fillText(text, x, y);
 }
 
 function jump() {
     if (player.y >= 420) {
-        player.vy = jumpPower; // INSTANT
+        player.vy = -16;
+        jumpSound.play();
     }
 }
 
-// NO LAG INPUT
-document.getElementById("jumpBtn").addEventListener("pointerdown", jump);
+// INPUT (INSTANT)
 canvas.addEventListener("pointerdown", jump);
 document.addEventListener("keydown", e => {
     if (e.code === "Space") jump();
 });
 
+// GAME LOOP
 function update() {
-    if (gameOver) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!running) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // PLAYER
     player.vy += gravity;
@@ -136,80 +162,58 @@ function update() {
     }
 
     // OBSTACLE
-    obstacle.x -= 6;
+    obstacle.x -= speed;
     if (obstacle.x < -40) {
-        obstacle.x = canvas.width + Math.random() * 200;
+        obstacle.x = canvas.width + 200;
         score++;
+        if (score % 5 === 0) {
+            level++;
+            speed++;
+        }
     }
 
     // COIN
-    coin.x -= 6;
+    coin.x -= speed;
     if (coin.x < -40) {
-        coin.x = canvas.width + Math.random() * 300;
+        coin.x = canvas.width + 300;
     }
 
-    // COLLISION (BOMB)
+    // COLLISION BOMB
     if (Math.abs(player.x - obstacle.x) < 26 &&
         Math.abs(player.y - obstacle.y) < 26) {
-        gameOver = true;
-        alert("💥 Game Over!\nScore: " + score);
-        location.reload();
+        lives--;
+        obstacle.x = canvas.width + 200;
+        if (lives <= 0) gameOver();
     }
 
-    // COIN COLLECT
+    // COLLISION COIN
     if (Math.abs(player.x - coin.x) < 26 &&
         Math.abs(player.y - coin.y) < 26) {
         score += 5;
-        coin.x = canvas.width + 200;
+        coinSound.play();
+        coin.x = canvas.width + 300;
     }
 
-    drawGround();
-    drawPlayer();
-    drawObstacle();
-    drawCoin();
-    drawScore();
+    // DRAW
+    drawText("🌱🌱🌱🌱🌱🌱🌱🌱🌱", canvas.width/2, 470, 26);
+    drawText("😃", player.x, player.y);
+    drawText("💣", obstacle.x, obstacle.y);
+    drawText("⭐", coin.x, coin.y);
+
+    ctx.font = "16px Arial";
+    ctx.fillText("Score: "+score+"  ❤️"+lives+"  Level: "+level, canvas.width/2, 20);
 
     requestAnimationFrame(update);
 }
 
-update();
-</script>
-
-</body>
-</html>    }
-
-    // Collision
-    if (
-        player.x < obstacle.x + obstacle.w &&
-        player.x + player.w > obstacle.x &&
-        player.y < obstacle.y + obstacle.h &&
-        player.y + player.h > obstacle.y
-    ) {
-        gameOver = true;
-        alert("Game Over! Score: " + score);
-        location.reload();
-    }
-
-    drawPlayer();
-    drawObstacle();
-    drawScore();
-
-    requestAnimationFrame(update);
+function gameOver() {
+    running = false;
+    overSound.play();
+    setTimeout(()=>{
+        alert("💥 Game Over\nScore: "+score);
+        document.getElementById("menu").style.display = "flex";
+    },200);
 }
-
-function jump() {
-    if (player.y >= 400) {
-        player.vy = -14;
-    }
-}
-
-// Keyboard + Touch
-document.addEventListener("keydown", e => {
-    if (e.code === "Space") jump();
-});
-canvas.addEventListener("touchstart", jump);
-
-update();
 </script>
 
 </body>
